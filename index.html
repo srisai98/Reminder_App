@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Reminder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffd24d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .reminder-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px; /* Space between main form and reminder list */
+        }
+
+        .reminder-container h1 {
+            color: #673ab7;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .reminder-container h2 {
+            color: #673ab7;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .reminder-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .reminder-container select, 
+        .reminder-container input[type="time"], 
+        .reminder-container input[type="file"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .reminder-container button {
+            background: #673ab7;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .reminder-container button:hover {
+            background: #5e35b1;
+        }
+
+        @media (max-width: 400px) {
+            .reminder-container {
+                padding: 15px;
+                max-width: 90%;
+            }
+        }
+
+        /* Upcoming Reminders Styles */
+        .reminder-list-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .reminder-list-container h3 {
+            color: #673ab7;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        .reminder-list {
+            text-align: left;
+            max-height: 300px; /* Fixed height for scrolling */
+            overflow-y: auto;  /* Vertical scroll */
+            border: 1px solid #ddd; /* Border to distinguish the scrolling area */
+            padding: 10px; /* Padding for better spacing */
+        }
+
+        .reminder-list ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .reminder-list li {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reminder-list button {
+            background: #e53935;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .reminder-list button:hover {
+            background: #c62828;
+        }
+
+        #reminder-popup, #overlay {
+            display: none;
+        }
+
+        #reminder-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border: 2px solid #673ab7;
+            padding: 20px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        #reminder-popup button {
+            background: #673ab7;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #reminder-popup button:hover {
+            background: #5e35b1;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="reminder-container">
+        <h1>Time to Set Reminder</h1>
+        <h2>Activity</h2>
+        
+        <label for="day-select">Day:</label>
+        <select id="day-select">
+            <option>Monday</option>
+            <option>Tuesday</option>
+            <option>Wednesday</option>
+            <option>Thursday</option>
+            <option>Friday</option>
+            <option>Saturday</option>
+            <option>Sunday</option>
+        </select>
+
+        <label for="time-select">Time:</label>
+        <input type="time" id="time-select">
+
+        <label for="activity-select">Activity:</label>
+        <select id="activity-select">
+            <option>Wake up</option>
+            <option>Go to gym</option>
+            <option>Breakfast</option>
+            <option>Meetings</option>
+            <option>Lunch</option>
+            <option>Quick nap</option>
+            <option>Go to library</option>
+            <option>Dinner</option>
+            <option>Go to sleep</option>
+        </select>
+
+        <label for="audio-select">Reminder Sound:</label>
+        <input type="file" id="audio-select" accept="audio/*">
+
+        <button onclick="addReminder()">Add Reminder</button>
+    </div>
+
+    <div class="reminder-list-container">
+        <h3>Upcoming Reminders:</h3>
+        <div class="reminder-list">
+            <ul id="reminder-list"></ul>
+        </div>
+    </div>
+
+    <audio id="reminder-sound" preload="auto"></audio>
+
+    <div id="reminder-popup">
+        <h3 id="popup-activity">Time to...</h3>
+        <button onclick="stopReminder()">Stop</button>
+    </div>
+
+    <div id="overlay"></div>
+
+    <script>
+        const reminders = [];
+    
+        function addReminder() {
+            const day = document.getElementById('day-select').value;
+            const time = document.getElementById('time-select').value;
+            const activity = document.getElementById('activity-select').value;
+            const audioInput = document.getElementById('audio-select');
+            const reminderSound = document.getElementById('reminder-sound');
+    
+            if (!audioInput.files.length) {
+                alert("Please select an audio file for the reminder.");
+                return;
+            }
+    
+            const fileURL = URL.createObjectURL(audioInput.files[0]);
+            reminderSound.src = fileURL;
+    
+            const now = new Date();
+            const [hour, minute] = time.split(':');
+            let selectedTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+    
+            // Adjust the date to the correct day
+            const dayMap = {
+                'Monday': 1,
+                'Tuesday': 2,
+                'Wednesday': 3,
+                'Thursday': 4,
+                'Friday': 5,
+                'Saturday': 6,
+                'Sunday': 0
+            };
+    
+            let targetDay = dayMap[day];
+            let currentDay = now.getDay();
+    
+            // Calculate the difference in days
+            let dayDifference = targetDay - currentDay;
+            if (dayDifference < 0) {
+                dayDifference += 7; // Schedule for next week
+            }
+    
+            selectedTime.setDate(now.getDate() + dayDifference);
+    
+            let timeDifference = selectedTime - now;
+    
+            if (timeDifference < 0) {
+                timeDifference += 24 * 60 * 60 * 1000;
+            }
+    
+            const reminder = {
+                day,
+                time,
+                activity,
+                soundURL: fileURL,
+                reminderTime: selectedTime, // Added property to track reminder time
+                timeoutId: setTimeout(() => {
+                    showPopup(activity);
+                    playReminderSound(fileURL);
+                }, timeDifference)
+            };
+    
+            reminders.push
+            reminders.push(reminder);
+            updateReminderList();
+        }
+    
+        function playReminderSound(fileURL) {
+            const reminderSound = document.getElementById('reminder-sound');
+            reminderSound.src = fileURL;
+            reminderSound.loop = true;
+            reminderSound.play();
+    
+            // Stop the sound after a minute, or you can adjust as needed
+            setTimeout(stopReminder, 60000);
+        }
+    
+        function showPopup(activity) {
+            document.getElementById('popup-activity').textContent = `Time to ${activity}`;
+            document.getElementById('reminder-popup').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+    
+        function stopReminder() {
+            document.getElementById('reminder-popup').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            const reminderSound = document.getElementById('reminder-sound');
+            reminderSound.pause();
+            reminderSound.currentTime = 0;
+        }
+    
+        function updateReminderList() {
+            const list = document.getElementById('reminder-list');
+            list.innerHTML = '';
+    
+            reminders.sort((a, b) => a.reminderTime - b.reminderTime); // Sort reminders by time
+    
+            reminders.forEach((reminder, index) => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    ${reminder.day} at ${reminder.time}: ${reminder.activity}
+                    <button onclick="removeReminder(${index})">Remove</button>
+                `;
+                list.appendChild(listItem);
+            });
+        }
+    
+        function removeReminder(index) {
+            clearTimeout(reminders[index].timeoutId);
+            reminders.splice(index, 1);
+            updateReminderList();
+        }
+    </script>
+</body>
+</html>
